@@ -1,0 +1,15 @@
+{
+  "name": "xbit-lib",
+  "version": "1.0.0",
+  "description": "xbit library for xbit applets",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Ben Lloyd",
+  "license": "ISC",
+  "devDependencies": {
+    "tailwind": "^4.0.0",
+    "vite": "^5.0.2"
+  }
+}
