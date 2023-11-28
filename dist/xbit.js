@@ -70,10 +70,6 @@ export class xbit {
       cmd.id = Math.round(Math.random() * 100)
     }
 
-    if (typeof dotNetHelper !== 'undefined') {
-      return dotNetHelper.invokeMethodAsync('OnJavascriptMessage', cmd)
-    }
-  
     return new Promise((resolve, reject) => {
       const command = {
         data: cmd,
@@ -88,11 +84,19 @@ export class xbit {
       this.commands.push(command)
       if (vscode) {
         vscode.postMessage(cmd)
+      } else if (typeof dotNetHelper !== 'undefined') {
+        dotNetHelper.invokeMethodAsync(cmd)
       } else {
         window.top.postMessage(cmd, '*')
       }
     })
   }
+
+  static sendStartBluetoothScanningCommand = sendStartBluetoothScanningCommand
+  static sendStopBluetoothScanningCommand = sendStopBluetoothScanningCommand
+  static sendBluetoothConnectCommand = sendBluetoothConnectCommand
+  static sendBluetoothDisconnectCommand = sendBluetoothDisconnectCommand
+  static sendCloseAppletCommand = sendCloseAppletCommand
 
   static _handleMessage = (data) => {
     // check for state event
@@ -141,10 +145,8 @@ window.addEventListener('message', ({ data }) => {
   xbit._handleMessage(data)
 })
 
-export default xbit
-
 // Built in commands
-export async function sendStartBluetoothScanningCommand (active = 0) {
+const sendStartBluetoothScanningCommand = async function (active = 0) {
   const command = {
     method: 'startBluetoothScanning',
     params: {
@@ -154,17 +156,14 @@ export async function sendStartBluetoothScanningCommand (active = 0) {
   return xbit.sendCommand(command)
 }
 
-export async function sendStopBluetoothScanningCommand () {
+const sendStopBluetoothScanningCommand = async function () {
   const command = {
-    method: 'startBluetoothScanning',
-    params: {
-      active
-    }
+    method: 'startBluetoothScanning'
   }
   return xbit.sendCommand(command)
 }
 
-export async function sendBluetoothConnectCommand (deviceId) {
+const sendBluetoothConnectCommand = async function (deviceId) {
   const command = {
     method: 'bluetoothConnect',
     params: {
@@ -174,11 +173,17 @@ export async function sendBluetoothConnectCommand (deviceId) {
   return xbit.sendCommand(command)
 }
 
-export async function sendBluetoothDisconnectCommand () {
+const sendBluetoothDisconnectCommand = async function () {
   const command = {
     method: 'bluetoothDisconnect'
   }
   return xbit.sendCommand(command)
+}
+
+const sendCloseAppletCommand = async function () {
+  return xbit.sendCommand({
+    method: 'closeApplet'
+  })
 }
 
 /* UI Classes */
@@ -259,3 +264,5 @@ export class ToggleButton {
     // ask the parent for the list of devices
   }
 }
+
+export default xbit
