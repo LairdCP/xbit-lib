@@ -70,6 +70,10 @@ export class xbit {
       cmd.id = Math.round(Math.random() * 100)
     }
 
+    if (typeof dotNetHelper !== 'undefined') {
+      return dotNetHelper.invokeMethodAsync('OnJavascriptMessage', cmd)
+    }
+  
     return new Promise((resolve, reject) => {
       const command = {
         data: cmd,
@@ -139,32 +143,46 @@ window.addEventListener('message', ({ data }) => {
 
 export default xbit
 
-export async function sendBluetoothStartScanningCommand () {
-  if (typeof dotNetHelper !== 'undefined') {
-    return dotNetHelper.invokeMethodAsync('OnJavascriptMessage', 'StartScan')
-  } else {
-    return xbit.sendCommand({
-      method: 'write',
-      params: {
-        command: 'scanner.start(0)\r\n'
-      }
-    })
+// Built in commands
+export async function sendStartBluetoothScanningCommand (active = 0) {
+  const command = {
+    method: 'startBluetoothScanning',
+    params: {
+      active
+    }
   }
+  return xbit.sendCommand(command)
 }
 
-export async function sendBluetoothStopScanningCommand () {
-  if (typeof dotNetHelper !== 'undefined') {
-    return dotNetHelper.invokeMethodAsync('OnJavascriptMessage', 'StopScan')
-  } else {
-    return xbit.sendCommand({
-      method: 'write',
-      params: {
-        command: 'scanner.stop()\r\n'
-      }
-    })
+export async function sendStopBluetoothScanningCommand () {
+  const command = {
+    method: 'startBluetoothScanning',
+    params: {
+      active
+    }
   }
+  return xbit.sendCommand(command)
 }
 
+export async function sendBluetoothConnectCommand (deviceId) {
+  const command = {
+    method: 'bluetoothConnect',
+    params: {
+      deviceId
+    }
+  }
+  return xbit.sendCommand(command)
+}
+
+export async function sendBluetoothDisconnectCommand () {
+  const command = {
+    method: 'bluetoothDisconnect'
+  }
+  return xbit.sendCommand(command)
+}
+
+/* UI Classes */
+/**************/
 export class Button {
   constructor (buttonId, message, clickHandler = null) {
     this.button = document.getElementById(buttonId)
