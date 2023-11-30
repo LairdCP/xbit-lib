@@ -18,6 +18,114 @@ try {
   baseUrl = '.' // eslint-disable-line no-global-assign
 }
 
+
+// Built in commands
+const sendStartBluetoothScanningCommand = async function (active = 0) {
+  const command = {
+    method: 'startBluetoothScanning',
+    params: {
+      active
+    }
+  }
+  return xbit.sendCommand(command)
+}
+
+const sendStopBluetoothScanningCommand = async function () {
+  const command = {
+    method: 'startBluetoothScanning'
+  }
+  return xbit.sendCommand(command)
+}
+
+const sendBluetoothConnectCommand = async function (deviceId) {
+  const command = {
+    method: 'bluetoothConnect',
+    params: {
+      deviceId
+    }
+  }
+  return xbit.sendCommand(command)
+}
+
+const sendBluetoothDisconnectCommand = async function () {
+  const command = {
+    method: 'bluetoothDisconnect'
+  }
+  return xbit.sendCommand(command)
+}
+
+const sendScanFilterResetCommand = async function () {
+  const command = {
+    method: 'scanFilterReset'
+  }
+  return xbit.sendCommand(command)
+}
+
+const sendScanFilterAddCommand = async function (address, name) {
+  const command = {
+    method: 'scanFilterAdd',
+    params: {
+      address,
+      name
+    }
+  }
+  return xbit.sendCommand(command)
+}
+
+const sendBleGetGattDictionaryCommand = async function () {
+  const command = {
+    method: 'bleGetGattDictionary'
+  }
+  return xbit.sendCommand(command)
+}
+
+const sendBleSetGattNameCommand = async function (name) {
+  const command = {
+    method: 'bleSetGattName',
+    params: {
+      name
+    }
+  }
+  return xbit.sendCommand(command)
+}
+
+const sendBleNotifyEnableCommand = async function (name) {
+  const command = {
+    method: 'bleNotifyEnable',
+    params: {
+      name
+    }
+  }
+  return xbit.sendCommand(command)
+}
+
+const sendBleNotifyDisableCommand = async function (name) {
+  const command = {
+    method: 'bleNotifyDisable',
+    params: {
+      name
+    }
+  }
+  return xbit.sendCommand(command)
+}
+
+const sendBleWriteCommand = async function (name, value) {
+  const command = {
+    method: 'bleWrite',
+    params: {
+      name,
+      value
+    }
+  }
+  return xbit.sendCommand(command)
+}
+
+const sendCloseAppletCommand = async function () {
+  return xbit.sendCommand({
+    method: 'closeApplet'
+  })
+}
+
 export class xbit {
   static get baseUrl () {
     return baseUrl
@@ -97,6 +205,13 @@ export class xbit {
   static sendBluetoothConnectCommand = sendBluetoothConnectCommand
   static sendBluetoothDisconnectCommand = sendBluetoothDisconnectCommand
   static sendCloseAppletCommand = sendCloseAppletCommand
+  static sendScanFilterResetCommand = sendScanFilterResetCommand
+  static sendScanFilterAddCommand = sendScanFilterAddCommand
+  static sendBleGetGattDictionaryCommand = sendBleGetGattDictionaryCommand
+  static sendBleSetGattNameCommand = sendBleSetGattNameCommand
+  static sendBleNotifyEnableCommand = sendBleNotifyEnableCommand
+  static sendBleNotifyDisableCommand = sendBleNotifyDisableCommand
+  static sendBleWriteCommand = sendBleWriteCommand
 
   static _handleMessage = (data) => {
     // check for state event
@@ -144,47 +259,6 @@ export class xbit {
 window.addEventListener('message', ({ data }) => {
   xbit._handleMessage(data)
 })
-
-// Built in commands
-const sendStartBluetoothScanningCommand = async function (active = 0) {
-  const command = {
-    method: 'startBluetoothScanning',
-    params: {
-      active
-    }
-  }
-  return xbit.sendCommand(command)
-}
-
-const sendStopBluetoothScanningCommand = async function () {
-  const command = {
-    method: 'startBluetoothScanning'
-  }
-  return xbit.sendCommand(command)
-}
-
-const sendBluetoothConnectCommand = async function (deviceId) {
-  const command = {
-    method: 'bluetoothConnect',
-    params: {
-      deviceId
-    }
-  }
-  return xbit.sendCommand(command)
-}
-
-const sendBluetoothDisconnectCommand = async function () {
-  const command = {
-    method: 'bluetoothDisconnect'
-  }
-  return xbit.sendCommand(command)
-}
-
-const sendCloseAppletCommand = async function () {
-  return xbit.sendCommand({
-    method: 'closeApplet'
-  })
-}
 
 /* UI Classes */
 /**************/
