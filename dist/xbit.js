@@ -32,7 +32,7 @@ const sendStartBluetoothScanningCommand = async function (active = 0) {
 
 const sendStopBluetoothScanningCommand = async function () {
   const command = {
-    method: 'startBluetoothScanning'
+    method: 'stopBluetoothScanning'
   }
   return xbit.sendCommand(command)
 }
@@ -126,6 +126,18 @@ const sendCloseAppletCommand = async function () {
   })
 }
 
+const convertPduTypeToJSON = (pduType) => {
+  return {
+      PI_HAPI_BLE_SCANNER_PDU_TYPE_CONNECTABLE: (pduType & 1) > 0,
+      PI_HAPI_BLE_SCANNER_PDU_TYPE_SCANNABLE: (pduType & 2) > 0,
+      PI_HAPI_BLE_SCANNER_PDU_TYPE_DIRECTED: (pduType & 4) > 0,
+      PI_HAPI_BLE_SCANNER_PDU_TYPE_SCAN_RESPONSE: (pduType & 8) > 0,
+      PI_HAPI_BLE_SCANNER_PDU_TYPE_LEGACY: (pduType & 16) > 0,
+      PI_HAPI_BLE_SCANNER_PDU_TYPE_EXTENDED: (pduType & 32) > 0
+  }
+}
+
+// Usage
 export class xbit {
   static get baseUrl () {
     return baseUrl
@@ -140,6 +152,8 @@ export class xbit {
   static commands = []
 
   static vscode = vscode
+
+  static convertPduType = convertPduTypeToJSON
 
   static addEventListener = (type, callback = null) => {
     if (typeof type === 'function') {
