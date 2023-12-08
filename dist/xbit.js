@@ -47,9 +47,12 @@ const sendBluetoothConnectCommand = async function (deviceId) {
   return xbit.sendCommand(command)
 }
 
-const sendBluetoothDisconnectCommand = async function () {
+const sendBluetoothDisconnectCommand = async function (deviceId) {
   const command = {
-    method: 'bluetoothDisconnect'
+    method: 'bluetoothDisconnect',
+    params: {
+      deviceId
+    }
   }
   return xbit.sendCommand(command)
 }
@@ -189,7 +192,7 @@ export class xbit {
 
   static sendCommand = function (cmd) { // eslint-disable-line no-unused-vars
     if (!cmd.id) {
-      cmd.id = Math.round(Math.random() * 100)
+      cmd.id = Math.round(Math.random() * 99) + 1
     }
 
     return new Promise((resolve, reject) => {
@@ -266,6 +269,19 @@ export class xbit {
       }
       return false
     })
+  }
+
+  static hexToInts = (hexString) => {
+    const intArray = []
+    for (let i = 0; i < hexString.length; i += 2) {
+      intArray.push(parseInt(hexString.substr(i, 2), 16))
+    }
+    return new Uint8Array(intArray)
+  }
+  
+  static toDate = (dateString) => {
+    const date = new Date(dateString)
+    return date.toLocaleString()
   }
 }
 

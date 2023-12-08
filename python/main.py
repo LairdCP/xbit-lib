@@ -1,5 +1,5 @@
 app_id='xbit_usb'
-app_ver='0.0.1'
+app_ver='0.0.3'
 
 import sys
 import xbit_lib
@@ -70,13 +70,16 @@ import xbit_lib
 # |  |  |     |     |  |  |  |  |  |  |-> # "Hello"
 # |  |  |     |     |  |  |  |  |  |  |              |-> # primitive(*)  
 # 03 00 00 0a 00 00 00 00 bf 61 72 65 48 65 6c 6c 6f ff
-
 # start the xbit shell to receive commands
 def xbitShellStart():
     # loop forever waiting for input from xbit
     while True:
         print('xbit>',end="")
-        cmd = sys.stdin.readline()
+        try:
+            cmd = sys.stdin.readline()
+        except:
+            print("")
+            break
         processCmd(cmd.strip())
 
 # process a JSON command
