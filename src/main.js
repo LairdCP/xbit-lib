@@ -4,7 +4,7 @@
 /* global dotNetHelper */
 
 let vscode
-
+let dotNet = false
 let baseUrl = '.'
 
 try {
@@ -18,9 +18,13 @@ try {
   baseUrl = '.' // eslint-disable-line no-global-assign
 }
 
+if (typeof dotNetHelper !== 'undefined') {
+  dotNet = true
+}
+
 
 // Built in commands
-const sendStartBluetoothScanningCommand = async function (active = 0) {
+const sendStartBluetoothScanningCommand = async function ({ active = 0 } = {}) {
   const command = {
     method: 'startBluetoothScanning',
     params: {
@@ -37,7 +41,7 @@ const sendStopBluetoothScanningCommand = async function () {
   return xbit.sendCommand(command)
 }
 
-const sendBluetoothConnectCommand = async function (deviceId) {
+const sendBluetoothConnectCommand = async function ({ deviceId }) {
   const command = {
     method: 'bluetoothConnect',
     params: {
@@ -47,12 +51,9 @@ const sendBluetoothConnectCommand = async function (deviceId) {
   return xbit.sendCommand(command)
 }
 
-const sendBluetoothDisconnectCommand = async function (deviceId) {
+const sendBluetoothDisconnectCommand = async function () {
   const command = {
     method: 'bluetoothDisconnect',
-    params: {
-      deviceId
-    }
   }
   return xbit.sendCommand(command)
 }
@@ -64,7 +65,7 @@ const sendScanFilterResetCommand = async function () {
   return xbit.sendCommand(command)
 }
 
-const sendScanFilterAddCommand = async function (address, name) {
+const sendScanFilterAddCommand = async function ({ deviceId, name }) {
   const command = {
     method: 'scanFilterAdd',
     params: {
@@ -75,49 +76,57 @@ const sendScanFilterAddCommand = async function (address, name) {
   return xbit.sendCommand(command)
 }
 
-const sendBleGetGattDictionaryCommand = async function () {
+const sendBleGetGattDictionaryCommand = async function ({ deviceId }) {
   const command = {
-    method: 'bleGetGattDictionary'
+    method: 'bleGetGattDictionary',
+    params: {
+      deviceId
+    }
   }
   return xbit.sendCommand(command)
 }
 
-const sendBleSetGattNameCommand = async function (name) {
+const sendBleSetGattNameCommand = async function ({ uuid, name, deviceId }) {
   const command = {
     method: 'bleSetGattName',
     params: {
-      name
+      uuid,
+      name,
+      deviceId
     }
   }
   return xbit.sendCommand(command)
 }
 
-const sendBleNotifyEnableCommand = async function (name) {
+const sendBleNotifyEnableCommand = async function ({ uuid, deviceId }) {
   const command = {
-    method: 'bleNotifyEnable',
+    method: 'bluetoothSubscribeCharacteristic',
     params: {
-      name
+      uuid,
+      deviceId
     }
   }
   return xbit.sendCommand(command)
 }
 
-const sendBleNotifyDisableCommand = async function (name) {
+const sendBleNotifyDisableCommand = async function ({ uuid, deviceId }) {
   const command = {
     method: 'bleNotifyDisable',
     params: {
-      name
+      uuid,
+      deviceId
     }
   }
   return xbit.sendCommand(command)
 }
 
-const sendBleWriteCommand = async function (name, value) {
+const sendBleWriteCommand = async function ({ data, uuid, deviceId}) {
   const command = {
-    method: 'bleWrite',
+    method: 'bluetoothWriteRequest',
     params: {
-      name,
-      value
+      data,
+      uuid,
+      deviceId
     }
   }
   return xbit.sendCommand(command)
@@ -129,14 +138,44 @@ const sendCloseAppletCommand = async function () {
   })
 }
 
+const sendToast = async function ({ message, type = 'info', options = {} }) {
+  xbit.sendCommand({
+    method: 'callStoreMethod',
+    params: {
+      store: 'notificationStore',
+      method: type === 'info' ? 'setNotif' : 'setError',
+      args: [message, options]
+    }
+  })
+}
+
+const sendClearToast = async function () {
+  xbit.sendCommand({
+    method: 'callStoreMethod',
+    params: {
+      store: 'notificationStore',
+      method: 'clear',
+      args: []
+    }
+  })
+}
+
+const sendFilePickerCommand = async function () {
+  if (dotNet) {
+    return xbit.sendCommand({
+      method: 'filePickerRequest'
+    })
+  }
+}
+
 const convertPduTypeToJSON = (pduType) => {
   return {
-      PI_HAPI_BLE_SCANNER_PDU_TYPE_CONNECTABLE: (pduType & 1) > 0,
-      PI_HAPI_BLE_SCANNER_PDU_TYPE_SCANNABLE: (pduType & 2) > 0,
-      PI_HAPI_BLE_SCANNER_PDU_TYPE_DIRECTED: (pduType & 4) > 0,
-      PI_HAPI_BLE_SCANNER_PDU_TYPE_SCAN_RESPONSE: (pduType & 8) > 0,
-      PI_HAPI_BLE_SCANNER_PDU_TYPE_LEGACY: (pduType & 16) > 0,
-      PI_HAPI_BLE_SCANNER_PDU_TYPE_EXTENDED: (pduType & 32) > 0
+    PI_HAPI_BLE_SCANNER_PDU_TYPE_CONNECTABLE: (pduType & 1) > 0,
+    PI_HAPI_BLE_SCANNER_PDU_TYPE_SCANNABLE: (pduType & 2) > 0,
+    PI_HAPI_BLE_SCANNER_PDU_TYPE_DIRECTED: (pduType & 4) > 0,
+    PI_HAPI_BLE_SCANNER_PDU_TYPE_SCAN_RESPONSE: (pduType & 8) > 0,
+    PI_HAPI_BLE_SCANNER_PDU_TYPE_LEGACY: (pduType & 16) > 0,
+    PI_HAPI_BLE_SCANNER_PDU_TYPE_EXTENDED: (pduType & 32) > 0
   }
 }
 
@@ -201,7 +240,7 @@ export class xbit {
         reject,
         resolve,
         timeout: setTimeout(() => {
-          reject(new Error('timeout'))
+          reject(new Error('xbit lib timeout'))
           this.commands.splice(this.commands.indexOf(command), 1)
         }, 5000)
       }
@@ -209,7 +248,7 @@ export class xbit {
       this.commands.push(command)
       if (vscode) {
         vscode.postMessage(cmd)
-      } else if (typeof dotNetHelper !== 'undefined') {
+      } else if (dotNet) {
         dotNetHelper.invokeMethodAsync(cmd)
       } else {
         window.top.postMessage(cmd, '*')
@@ -229,6 +268,9 @@ export class xbit {
   static sendBleNotifyEnableCommand = sendBleNotifyEnableCommand
   static sendBleNotifyDisableCommand = sendBleNotifyDisableCommand
   static sendBleWriteCommand = sendBleWriteCommand
+  static sendToast = sendToast
+  static sendClearToast = sendClearToast
+  static sendFilePickerCommand = sendFilePickerCommand
 
   static _handleMessage = (data) => {
     // check for state event
