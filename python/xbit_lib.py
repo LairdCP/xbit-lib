@@ -94,7 +94,11 @@ def bleSetGattName(uuid,char_name):
     global gatt_client
     global rpc_id
     if gatt_client != None:
-        gatt_client.set_name(uuid, char_name)
+        try:
+            gatt_client.set_name(uuid, char_name)
+        except:
+            print("{'i':" + str(rpc_id) + ", 'e':'EXISTS'}")
+            return
         print("{'i':" + str(rpc_id) + "}")
     else:
         print("{'i':" + str(rpc_id) + ",'e':'NOCLIENT'}")
