@@ -9,6 +9,17 @@ rpc_id = 0
 scan_rpc_id = 0
 
 #----------------------------------------------------------------
+# Properties
+# i: the RPC ID of the request
+# e: the error code, if any
+# m: the message / method type
+# d: the deviceId
+# b: hex string of data bytes
+# j: JSON object
+# r: RSSI 
+# t: subtype (for scan results, it's pduType)
+
+#----------------------------------------------------------------
 # PUBLIC EXTERNAL FUNCTIONS
 # Intended to be called by off-board host applications.
 # These functions form xbitLib's external-facing API.
@@ -85,7 +96,7 @@ def bleGetGattDictionary():
     global rpc_id
     if gatt_client != None:
         gatt_dict = gatt_client.get_dict()
-        print("{'i':" + str(rpc_id) + ",'d':" + str(gatt_dict) + "}")
+        print("{'i':" + str(rpc_id) + ",'j':" + str(gatt_dict) + "}")
     else:
         print("{'i':" + str(rpc_id) + ",'e':'NOCLIENT'}")
 
@@ -154,7 +165,7 @@ def scan_init():
 # BLE scan result callback
 def scan_cb(sr):
     global scan_rpc_id
-    sr_obj = {'m':'bleAd','d':binascii.hexlify(sr.addr).decode(),'a':binascii.hexlify(sr.data).decode(),'t':sr.type,'r':sr.rssi,'i':scan_rpc_id}
+    sr_obj = {'m':'bleAd','d':binascii.hexlify(sr.addr).decode(),'b':binascii.hexlify(sr.data).decode(),'t':sr.type,'r':sr.rssi,'i':scan_rpc_id}
     print(str(sr_obj).replace(' ',''))
 
 # BLE connection established callback
@@ -181,8 +192,12 @@ def discon_cb(conn):
 
 # BLE notification callback
 def notify_cb(event):
-    print("{'m':'bleNotify','n':'" + event.name + "','d':'" + event.data.hex() + "'}")
+    # if name is empty, use the uuid instead
+    if len(event.name) == 0:
+        print("{'m':'bleNotify','n':'" + event.uuid + "','b':'" + event.data.hex() + "'}")
+    else:
+        print("{'m':'bleNotify','n':'" + event.name + "','b':'" + event.data.hex() + "'}")
 
 # BLE indication callback
 def indicate_cb(event):
-    print("{'m':'bleIndicate','n':'" + event.name + "','d':'" + event.data.hex() + "'}")
+    print("{'m':'bleIndicate','n':'" + event.name + "','b':'" + event.data.hex() + "'}")
