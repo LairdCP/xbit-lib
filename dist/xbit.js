@@ -24,7 +24,7 @@ if (typeof dotNetHelper !== 'undefined') {
 
 
 // Built in commands
-const sendStartBluetoothScanningCommand = async function ({ active = 0 } = {}) {
+const sendStartBluetoothScanningCommand = async function ({ active = 1 } = {}) {
   const command = {
     method: 'startBluetoothScanning',
     params: {
@@ -168,7 +168,7 @@ const sendFilePickerCommand = async function () {
   }
 }
 
-const convertPduTypeToJSON = (pduType) => {
+export const convertPduTypeToJSON = (pduType) => {
   return {
     PI_HAPI_BLE_SCANNER_PDU_TYPE_CONNECTABLE: (pduType & 1) > 0,
     PI_HAPI_BLE_SCANNER_PDU_TYPE_SCANNABLE: (pduType & 2) > 0,
@@ -176,6 +176,67 @@ const convertPduTypeToJSON = (pduType) => {
     PI_HAPI_BLE_SCANNER_PDU_TYPE_SCAN_RESPONSE: (pduType & 8) > 0,
     PI_HAPI_BLE_SCANNER_PDU_TYPE_LEGACY: (pduType & 16) > 0,
     PI_HAPI_BLE_SCANNER_PDU_TYPE_EXTENDED: (pduType & 32) > 0
+  }
+}
+
+export function hexToBytes (hex) {
+  const bytes = []
+
+  for (let c = 0; c < hex.length; c += 2) {
+    bytes.push(parseInt(hex.substr(c, 2), 16))
+  }
+
+  return bytes
+}
+
+export function parseLtvs (fullAd) {
+  const map = {}
+  let i = 0
+
+  fullAd = fullAd.toLowerCase()
+
+  while (i < fullAd.length) {
+    const tlen = parseInt(fullAd.substr(i, 2), 16)
+    if (tlen <= 0) {
+      return map
+    }
+    const t = fullAd.substr(i + 2, 2)
+    const v = hexToBytes(fullAd.substr(i + 4, tlen * 2))
+    if (map[t]) {
+      map[t].push(v)
+    } else {
+      map[t] = [v]
+    }
+    i += 2 + tlen * 2
+  }
+  return map
+}
+
+export function hasLtv (ltvTypeStr, dataPrefix, ltvMap) {
+  if (ltvMap[ltvTypeStr]) {
+    const v = ltvMap[ltvTypeStr]
+    if (v) {
+      for (let i = 0; i < dataPrefix.length; i++) {
+        if (v[i] !== dataPrefix[i]) {
+          return false
+        }
+      }
+      return true
+    }
+  }
+  return false
+}
+
+export function parseAd (ad) {
+  const ltvMap = parseLtvs(v)
+  let canvas = false
+  // production sera 1.0.0
+  if (hasLtv('ff', [0x77, 0x00, 0x0c, 0x00], ltvMap)) {
+    canvas = true
+  }
+  return {
+    ltvMap,
+    canvas
   }
 }
 
@@ -240,7 +301,7 @@ export class xbit {
         reject,
         resolve,
         timeout: setTimeout(() => {
-          reject(new Error('xbit lib timeout'))
+          reject(new Error(`xbit-lib: sendCommand timeout ${cmd.method}:${cmd.id}`))
           this.commands.splice(this.commands.indexOf(command), 1)
         }, 5000)
       }
