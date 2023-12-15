@@ -1,6 +1,6 @@
 {
   "name": "@bennybtl/xbit-lib",
-  "version": "1.0.5",
+  "version": "1.0.7",
   "description": "xbit library for xbit applets",
   "scripts": {
     "build": "rm -rf ./dist && mkdir ./dist && npx tailwindcss -i ./src/style.css -o ./dist/xbit.css && cp ./src/main.js ./dist/xbit.js"
@@ -13,6 +13,7 @@
     "tailwindcss": "^3.3.5"
   },
   "main": "dist/xbit.js",
+  "type": "module",
   "dependencies": {},
   "repository": {
     "type": "git",
