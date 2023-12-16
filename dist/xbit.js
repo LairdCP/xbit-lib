@@ -179,14 +179,13 @@ export const convertPduTypeToJSON = (pduType) => {
   }
 }
 
-export function hexToBytes (hex) {
-  const bytes = []
+export function hexToBytes (hexString) {
+  return Uint8Array.from(hexString.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)))
+}
 
-  for (let c = 0; c < hex.length; c += 2) {
-    bytes.push(parseInt(hex.substr(c, 2), 16))
-  }
 
-  return bytes
+export function bytesToHex (bytes) {
+  return bytes.reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '');
 }
 
 export function parseLtvs (fullAd) {
@@ -227,16 +226,79 @@ export function hasLtv (ltvTypeStr, dataPrefix, ltvMap) {
   return false
 }
 
-export function parseAd (ad) {
-  const ltvMap = parseLtvs(v)
-  let canvas = false
-  // production sera 1.0.0
-  if (hasLtv('ff', [0x77, 0x00, 0x0c, 0x00], ltvMap)) {
-    canvas = true
+const scanConstants = {
+  LAIRD_COMPANY_ID: 0x0077
+}
+
+export function parseManufacturerData (adData) {
+  //                                               L  T  Value
+  // ----------------------------------------------------------------------------------------------
+  //                                        Flags: 02 01 06
+  //                          Complete Local Name: 07 09 43616E766173
+  // Complete List of 128-bit Service Class UUIDS: 11 07 84AA6074528A8B86D34CB71D1DDC538D
+  //
+  // Canvas BLE Ad Format, can appear in scan response or advertising data:
+  //                                                     Company ID
+  //                                                     |    Protocol ID
+  //                                                     |    |    Product ID
+  //                                                     |    |    |    Firmware Type
+  //                                                     |    |    |    |  Version (Major.Minor.Patch)
+  //                                                     |    |    |    |  |      Configuration version
+  //                                                     |    |    |    |  |      |  Network ID
+  //                                                     |    |    |    |  |      |  |    Device ID
+  //                                                     |    |    |    |  |      |  |    |
+  //                   Manufacturer Specific Data: 16 FF 7700 0D00 0000 00 000161 00 0000 FA4DCF83CEC85BC5
+  const retval = []
+  adData.forEach((data, index) => {
+    let t = {}
+    const dataView = new DataView(data.buffer)
+    if (dataView.getUint16(0, true) == scanConstants.LAIRD_COMPANY_ID && dataView.getUint16(2, true) == 13) {
+      t.companyId = dataView.getUint16(0, true)
+      t.protocolId = dataView.getUint16(2, true)
+      t.productId = dataView.getUint16(4, true)
+      t.firmwareType = dataView.getUint8(6)
+      t.firmwareVersion = dataView.getUint8(7) + '.' + dataView.getUint8(8) + '.' + dataView.getUint8(9)
+      t.configVersion = dataView.getUint8(10)
+      t.networkId = dataView.getUint16(11, true)
+      t.deviceId = bytesToHex(data.slice(13))
+    }
+    retval.push(t)
+  })
+  return retval
+}
+
+// device.ad is an uint8 array
+export class DiscoveredDevice {
+  constructor (device) {
+    this.address = device.deviceId
+    this.ltvMap = {}
+    this.update(device)
   }
-  return {
-    ltvMap,
-    canvas
+
+  get isCanvas () {
+    return this.parsedAd && 
+      this.parsedAd.companyId === scanConstants.LAIRD_COMPANY_ID &&
+      this.parsedAd.protocolId === 13 &&
+      this.parsedAd.productId === 10
+  }
+
+  update (device) {
+    try {
+      this.ad = device.ad
+      this.name = device.name || null
+      this.rssi = device.rssi
+      const hexAd = bytesToHex(this.ad)
+
+      this.ltvMap = Object.assign(this.ltvMap, parseLtvs(hexAd))
+      if (this.ltvMap.ff) {
+        parseManufacturerData(this.ltvMap.ff).forEach((data) => {
+          this.parsedAd = Object.assign(this.parsedAd || {}, data)
+        })
+      }
+      this.pduType = convertPduTypeToJSON(device.pduType)
+    } catch (e) {
+      console.error(e)
+    }
   }
 }
 
@@ -389,9 +451,11 @@ export class xbit {
 }
 
 // Events from the backend arrive in this listener
-window.addEventListener('message', ({ data }) => {
-  xbit._handleMessage(data)
-})
+if (typeof window !== 'undefined') {
+  window.addEventListener('message', ({ data }) => {
+    xbit._handleMessage(data)
+  })
+}
 
 /* UI Classes */
 /**************/
