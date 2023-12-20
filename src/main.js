@@ -213,17 +213,19 @@ export function parseLtvs (fullAd) {
 
 export function hasLtv (ltvTypeStr, dataPrefix, ltvMap) {
   if (ltvMap[ltvTypeStr]) {
-    const v = ltvMap[ltvTypeStr]
-    if (v) {
-      for (let i = 0; i < dataPrefix.length; i++) {
-        if (v[i] !== dataPrefix[i]) {
-          return false
+    return ltvMap[ltvTypeStr].find((v) => {
+      if (v) {
+        for (let i = 0; i < dataPrefix.length; i++) {
+          if (v[i] !== dataPrefix[i]) {
+            return false
+          }
         }
+        return true
       }
-      return true
-    }
+    })
+  } else {
+    return false
   }
-  return false
 }
 
 const scanConstants = {
@@ -395,6 +397,13 @@ export class xbit {
   static sendClearToast = sendClearToast
   static sendFilePickerCommand = sendFilePickerCommand
 
+  static getSelectedPort = () => {
+    // ask the parent for the selected devices
+    return this.sendCommand({
+      method: 'getSelectedPort'
+    })
+  }
+
   static _handleMessage = (data) => {
     // check for state event
     if (data.method === 'setSelected') {
@@ -522,17 +531,6 @@ export class ToggleButton {
 
   enable () {
     this.button.disabled = false
-  }
-
-  getSelectedPort () {
-    // ask the parent for the selected devices
-    return xbit.sendCommand({
-      method: 'getSelectedPort'
-    })
-  }
-
-  getDevices () {
-    // ask the parent for the list of devices
   }
 }
 
