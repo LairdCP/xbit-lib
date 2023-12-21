@@ -50,7 +50,7 @@ const parseManufacturerData = (adData) => {
         t.firmwareVersion = dataView.getUint8(7) + '.' + dataView.getUint8(8) + '.' + dataView.getUint8(9)
         t.configVersion = dataView.getUint8(10)
         t.networkId = dataView.getUint16(11, true)
-        t.deviceId = bytesToHex(data.slice(13))
+        t.deviceAddress = bytesToHex(data.slice(13))
       }
       retval.push(t)
     })
