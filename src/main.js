@@ -322,6 +322,18 @@ export class xbit {
 
   static convertPduType = convertPduTypeToJSON
 
+  static formatAddress = (address) => {
+    if (!address) {
+      return '?'
+    }
+    // split the address by 2 characters
+    const split = address.match(/.{1,2}/g)
+    split.reverse()
+    split.pop()
+    // join the split address
+    return split.join('')
+  }
+
   static addEventListener = (type, callback = null) => {
     if (typeof type === 'function') {
       callback = type

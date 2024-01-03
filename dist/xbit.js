@@ -200,7 +200,7 @@ export function parseLtvs (fullAd) {
       return map
     }
     const t = fullAd.substr(i + 2, 2)
-    const v = hexToBytes(fullAd.substr(i + 4, tlen * 2))
+    const v = hexToBytes(fullAd.substr(i + 4, (tlen-1) * 2))
     if (map[t]) {
       map[t].push(v)
     } else {
@@ -321,6 +321,18 @@ export class xbit {
   static vscode = vscode
 
   static convertPduType = convertPduTypeToJSON
+
+  static formatAddress = (address) => {
+    if (!address) {
+      return '?'
+    }
+    // split the address by 2 characters
+    const split = address.match(/.{1,2}/g)
+    split.reverse()
+    split.pop()
+    // join the split address
+    return split.join('')
+  }
 
   static addEventListener = (type, callback = null) => {
     if (typeof type === 'function') {
