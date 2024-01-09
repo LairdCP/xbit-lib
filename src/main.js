@@ -24,11 +24,12 @@ if (typeof dotNetHelper !== 'undefined') {
 
 
 // Built in commands
-const sendStartBluetoothScanningCommand = async function ({ active = 1 } = {}) {
+const sendStartBluetoothScanningCommand = async function ({ active = 1, timeout = 0 } = {}) {
   const command = {
     method: 'startBluetoothScanning',
     params: {
-      active
+      active,
+      timeout
     }
   }
   return xbit.sendCommand(command)
