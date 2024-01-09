@@ -445,6 +445,19 @@ export class xbit {
     this.commands.find((cmd, i) => {
       if (cmd.data.id === data.id) {
         if (data.error) {
+          if (!data.error) {
+            data.error = 'Unknown error'
+          }
+          if (typeof data.error !== 'string') {
+            try {
+              data.error = JSON.stringify(data.error)
+            } catch (e) {
+              data.error = 'Unknown error'
+            }
+          }
+          if (data.error.length > 100) {
+            data.error = data.error.substr(0, 100) + '...'
+          }
           cmd.reject(data.error)
         } else {
           cmd.resolve(data.result)
