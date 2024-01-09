@@ -281,8 +281,7 @@ export class DiscoveredDevice {
   get isCanvas () {
     return this.parsedAd && 
       this.parsedAd.companyId === scanConstants.LAIRD_COMPANY_ID &&
-      this.parsedAd.protocolId === 13 &&
-      this.parsedAd.productId === 10
+      this.parsedAd.protocolId === 13
   }
 
   update (device) {
