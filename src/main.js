@@ -24,13 +24,10 @@ if (typeof dotNetHelper !== 'undefined') {
 
 
 // Built in commands
-const sendStartBluetoothScanningCommand = async function ({ active = 1, timeout = 0 } = {}) {
+const sendStartBluetoothScanningCommand = async function (params) {
   const command = {
     method: 'startBluetoothScanning',
-    params: {
-      active,
-      timeout
-    }
+    params
   }
   return xbit.sendCommand(command)
 }
@@ -42,12 +39,10 @@ const sendStopBluetoothScanningCommand = async function () {
   return xbit.sendCommand(command)
 }
 
-const sendBluetoothConnectCommand = async function ({ deviceAddress }) {
+const sendBluetoothConnectCommand = async function (params) {
   const command = {
     method: 'bluetoothConnect',
-    params: {
-      deviceAddress
-    }
+    params
   }
   return xbit.sendCommand(command)
 }
@@ -66,69 +61,50 @@ const sendScanFilterResetCommand = async function () {
   return xbit.sendCommand(command)
 }
 
-const sendScanFilterAddCommand = async function ({ deviceAddress, name }) {
+const sendScanFilterAddCommand = async function (params) {
   const command = {
     method: 'scanFilterAdd',
-    params: {
-      address,
-      name
-    }
+    params
   }
   return xbit.sendCommand(command)
 }
 
-const sendBleGetGattDictionaryCommand = async function ({ deviceAddress }) {
+const sendBleGetGattDictionaryCommand = async function (params) {
   const command = {
     method: 'bleGetGattDictionary',
-    params: {
-      deviceAddress
-    }
+    params
   }
   return xbit.sendCommand(command)
 }
 
-const sendBleSetGattNameCommand = async function ({ uuid, name, deviceAddress }) {
+const sendBleSetGattNameCommand = async function (params) {
   const command = {
     method: 'bleSetGattName',
-    params: {
-      uuid,
-      name,
-      deviceAddress
-    }
+    params
   }
   return xbit.sendCommand(command)
 }
 
-const sendBleNotifyEnableCommand = async function ({ uuid, deviceAddress }) {
+const sendBleNotifyEnableCommand = async function (params) {
   const command = {
     method: 'bluetoothSubscribeCharacteristic',
-    params: {
-      uuid,
-      deviceAddress
-    }
+    params
   }
   return xbit.sendCommand(command)
 }
 
-const sendBleNotifyDisableCommand = async function ({ uuid, deviceAddress }) {
+const sendBleNotifyDisableCommand = async function (params) {
   const command = {
     method: 'bleNotifyDisable',
-    params: {
-      uuid,
-      deviceAddress
-    }
+    params
   }
   return xbit.sendCommand(command)
 }
 
-const sendBleWriteCommand = async function ({ data, uuid, deviceAddress}) {
+const sendBleWriteCommand = async function (params) {
   const command = {
     method: 'bluetoothWriteRequest',
-    params: {
-      data,
-      uuid,
-      deviceAddress
-    }
+    params
   }
   return xbit.sendCommand(command)
 }
