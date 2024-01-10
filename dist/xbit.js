@@ -24,12 +24,10 @@ if (typeof dotNetHelper !== 'undefined') {
 
 
 // Built in commands
-const sendStartBluetoothScanningCommand = async function ({ active = 1 } = {}) {
+const sendStartBluetoothScanningCommand = async function (params) {
   const command = {
     method: 'startBluetoothScanning',
-    params: {
-      active
-    }
+    params
   }
   return xbit.sendCommand(command)
 }
@@ -41,12 +39,10 @@ const sendStopBluetoothScanningCommand = async function () {
   return xbit.sendCommand(command)
 }
 
-const sendBluetoothConnectCommand = async function ({ deviceAddress }) {
+const sendBluetoothConnectCommand = async function (params) {
   const command = {
     method: 'bluetoothConnect',
-    params: {
-      deviceAddress
-    }
+    params
   }
   return xbit.sendCommand(command)
 }
@@ -65,69 +61,50 @@ const sendScanFilterResetCommand = async function () {
   return xbit.sendCommand(command)
 }
 
-const sendScanFilterAddCommand = async function ({ deviceAddress, name }) {
+const sendScanFilterAddCommand = async function (params) {
   const command = {
     method: 'scanFilterAdd',
-    params: {
-      address,
-      name
-    }
+    params
   }
   return xbit.sendCommand(command)
 }
 
-const sendBleGetGattDictionaryCommand = async function ({ deviceAddress }) {
+const sendBleGetGattDictionaryCommand = async function (params) {
   const command = {
     method: 'bleGetGattDictionary',
-    params: {
-      deviceAddress
-    }
+    params
   }
   return xbit.sendCommand(command)
 }
 
-const sendBleSetGattNameCommand = async function ({ uuid, name, deviceAddress }) {
+const sendBleSetGattNameCommand = async function (params) {
   const command = {
     method: 'bleSetGattName',
-    params: {
-      uuid,
-      name,
-      deviceAddress
-    }
+    params
   }
   return xbit.sendCommand(command)
 }
 
-const sendBleNotifyEnableCommand = async function ({ uuid, deviceAddress }) {
+const sendBleNotifyEnableCommand = async function (params) {
   const command = {
     method: 'bluetoothSubscribeCharacteristic',
-    params: {
-      uuid,
-      deviceAddress
-    }
+    params
   }
   return xbit.sendCommand(command)
 }
 
-const sendBleNotifyDisableCommand = async function ({ uuid, deviceAddress }) {
+const sendBleNotifyDisableCommand = async function (params) {
   const command = {
     method: 'bleNotifyDisable',
-    params: {
-      uuid,
-      deviceAddress
-    }
+    params
   }
   return xbit.sendCommand(command)
 }
 
-const sendBleWriteCommand = async function ({ data, uuid, deviceAddress}) {
+const sendBleWriteCommand = async function (params) {
   const command = {
     method: 'bluetoothWriteRequest',
-    params: {
-      data,
-      uuid,
-      deviceAddress
-    }
+    params
   }
   return xbit.sendCommand(command)
 }
@@ -280,8 +257,7 @@ export class DiscoveredDevice {
   get isCanvas () {
     return this.parsedAd && 
       this.parsedAd.companyId === scanConstants.LAIRD_COMPANY_ID &&
-      this.parsedAd.protocolId === 13 &&
-      this.parsedAd.productId === 10
+      this.parsedAd.protocolId === 13
   }
 
   update (device) {
@@ -445,6 +421,19 @@ export class xbit {
     this.commands.find((cmd, i) => {
       if (cmd.data.id === data.id) {
         if (data.error) {
+          if (!data.error) {
+            data.error = 'Unknown error'
+          }
+          if (typeof data.error !== 'string') {
+            try {
+              data.error = JSON.stringify(data.error)
+            } catch (e) {
+              data.error = 'Unknown error'
+            }
+          }
+          if (data.error.length > 100) {
+            data.error = data.error.substr(0, 100) + '...'
+          }
           cmd.reject(data.error)
         } else {
           cmd.resolve(data.result)
