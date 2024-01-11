@@ -436,7 +436,7 @@ export class xbit {
           }
           cmd.reject(data.error)
         } else {
-          cmd.resolve(data.result)
+          cmd.resolve(data.result || {})
         }
         this.commands.splice(this.commands.indexOf(cmd), 1)
         clearTimeout(cmd.timeout)
