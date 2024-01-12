@@ -302,8 +302,17 @@ export class xbit {
     if (!address) {
       return '?'
     }
+
+    // if address looks like a whatever this is in Android
+    if (match(/^[0-9a-f]{7}-[0-9a-f]{2}-[0-9a-f]{6}-[0-9a-f]{2}-[0-9a-f]{13}$/)) {
+      // use the last 12 bytes
+      formatted = address.substr(-12)
+    } else {
+      formatted = address
+    }
+
     // split the address by 2 characters
-    const split = address.match(/.{1,2}/g)
+    const split = formatted.match(/.{1,2}/g)
     split.reverse()
     split.pop()
     // join the split address
