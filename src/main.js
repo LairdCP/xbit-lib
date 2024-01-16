@@ -24,7 +24,7 @@ if (typeof dotNetHelper !== 'undefined') {
 
 
 // Built in commands
-const sendStartBluetoothScanningCommand = async function (params) {
+const sendStartBluetoothScanningCommand = async function (params = {}) {
   const command = {
     method: 'startBluetoothScanning',
     params
@@ -39,7 +39,7 @@ const sendStopBluetoothScanningCommand = async function () {
   return xbit.sendCommand(command)
 }
 
-const sendBluetoothConnectCommand = async function (params) {
+const sendBluetoothConnectCommand = async function (params = {}) {
   const command = {
     method: 'bluetoothConnect',
     params
@@ -61,7 +61,7 @@ const sendScanFilterResetCommand = async function () {
   return xbit.sendCommand(command)
 }
 
-const sendScanFilterAddCommand = async function (params) {
+const sendScanFilterAddCommand = async function (params = {}) {
   const command = {
     method: 'scanFilterAdd',
     params
@@ -69,7 +69,7 @@ const sendScanFilterAddCommand = async function (params) {
   return xbit.sendCommand(command)
 }
 
-const sendBleGetGattDictionaryCommand = async function (params) {
+const sendBleGetGattDictionaryCommand = async function (params = {}) {
   const command = {
     method: 'bleGetGattDictionary',
     params
@@ -77,7 +77,7 @@ const sendBleGetGattDictionaryCommand = async function (params) {
   return xbit.sendCommand(command)
 }
 
-const sendBleSetGattNameCommand = async function (params) {
+const sendBleSetGattNameCommand = async function (params = {}) {
   const command = {
     method: 'bleSetGattName',
     params
@@ -85,7 +85,7 @@ const sendBleSetGattNameCommand = async function (params) {
   return xbit.sendCommand(command)
 }
 
-const sendBleNotifyEnableCommand = async function (params) {
+const sendBleNotifyEnableCommand = async function (params = {}) {
   const command = {
     method: 'bluetoothSubscribeCharacteristic',
     params
@@ -93,7 +93,7 @@ const sendBleNotifyEnableCommand = async function (params) {
   return xbit.sendCommand(command)
 }
 
-const sendBleNotifyDisableCommand = async function (params) {
+const sendBleNotifyDisableCommand = async function (params = {}) {
   const command = {
     method: 'bleNotifyDisable',
     params
@@ -101,7 +101,7 @@ const sendBleNotifyDisableCommand = async function (params) {
   return xbit.sendCommand(command)
 }
 
-const sendBleWriteCommand = async function (params) {
+const sendBleWriteCommand = async function (params = {}) {
   const command = {
     method: 'bluetoothWriteRequest',
     params
@@ -302,13 +302,11 @@ export class xbit {
     if (!address) {
       return '?'
     }
-
+    let formatted = address
     // if address looks like a whatever this is in Android
-    if (match(/^[0-9a-f]{7}-[0-9a-f]{2}-[0-9a-f]{6}-[0-9a-f]{2}-[0-9a-f]{13}$/)) {
+    if (/^[0-9a-f]{7}-[0-9a-f]{2}-[0-9a-f]{6}-[0-9a-f]{2}-[0-9a-f]{13}$/.test(address)) {
       // use the last 12 bytes
-      formatted = address.substr(-12)
-    } else {
-      formatted = address
+      formatted = formatted.substr(-12)
     }
 
     // split the address by 2 characters
