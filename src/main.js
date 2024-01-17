@@ -145,14 +145,54 @@ const sendFilePickerCommand = async function () {
   }
 }
 
+// input a PDU type byte
+// output an object with the following properties:
 export const convertPduTypeToJSON = (pduType) => {
   return {
-    PI_HAPI_BLE_SCANNER_PDU_TYPE_CONNECTABLE: (pduType & 1) > 0,
-    PI_HAPI_BLE_SCANNER_PDU_TYPE_SCANNABLE: (pduType & 2) > 0,
-    PI_HAPI_BLE_SCANNER_PDU_TYPE_DIRECTED: (pduType & 4) > 0,
-    PI_HAPI_BLE_SCANNER_PDU_TYPE_SCAN_RESPONSE: (pduType & 8) > 0,
-    PI_HAPI_BLE_SCANNER_PDU_TYPE_LEGACY: (pduType & 16) > 0,
-    PI_HAPI_BLE_SCANNER_PDU_TYPE_EXTENDED: (pduType & 32) > 0
+    connectable: (pduType & 1) > 0,
+    scannable: (pduType & 2) > 0,
+    directed: (pduType & 4) > 0,
+    scanResponse: (pduType & 8) > 0,
+    legacy: (pduType & 16) > 0,
+    extended: (pduType & 32) > 0
+  }
+}
+
+// input a data buffer from a ranging packet
+// output an array of ranging records
+export const parseRangingData = (data) => {
+  const dataView = new DataView(data.buffer)
+  const rangingData = []
+  for (let i = 20; i < dataView.byteLength;) {
+    const record = {
+      type: dataView.getUint8(i),
+      len: dataView.getUint8(i + 1)
+    }
+    record.bytes = data.slice(i + 2, i + 2 + record.len)
+    if (record.type === 0) {
+      record.dist = (record.bytes[2] << 8) | record.bytes[3]
+      record.range = bytesToHex(record.bytes.slice(0, 2))
+    } else if (record.type === 10) {
+      record.color = [(record.bytes[0] * 10) % 255, (record.bytes[1] * 10) % 255, (record.bytes[2] * 10) % 255]
+    }
+    i += record.len
+    if (record.len <= 0) {
+      break
+    }    
+    rangingData.push(record)
+  }
+  return rangingData
+}
+
+export const rangingFlagsToJSON = (flags) => {
+  return {
+    configured: (flags & 1) > 0,
+    anchor: (flags & 2) > 0,
+    canScan: (flags & 4) > 0,
+    isResponder: (flags & 8) > 0,
+    activeRangingSession: (flags & 16) > 0,
+    hasCoarsePosition: (flags & 32) > 0,
+    hasFinePosition: (flags & 64) > 0,
   }
 }
 
@@ -240,6 +280,17 @@ export function parseManufacturerData (adData) {
       t.configVersion = dataView.getUint8(10)
       t.networkId = dataView.getUint16(11, true)
       t.deviceAddress = bytesToHex(data.slice(13))
+    }
+    if (dataView.getUint16(0, true) == scanConstants.LAIRD_COMPANY_ID && dataView.getUint16(2, true) == 12) {
+      t.companyId = dataView.getUint16(0, true)
+      t.protocolId = dataView.getUint16(2, true)
+      t.networkId = dataView.getUint16(4, true)
+      t.flags = rangingFlagsToJSON(dataView.getUint16(6, true))
+      t.longAddr = bytesToHex(data.slice(8, 16))
+      t.shortAddr = t.longAddr.substring(12, 16)
+      t.timestamp = dataView.getUint32(16, true)
+
+      t.rangingData = parseRangingData(data)
     }
     retval.push(t)
   })
