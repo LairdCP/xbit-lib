@@ -11,6 +11,8 @@ export default {
         'canvas-slate-600': '#485462',
         'canvas-slate-700': '#313a44',
         'canvas-slate-800': '#2B3136',
+        'canvas-gray-300': '#E4E4E4',
+        'canvas-gray-400': '#A2A2A2',
         'canvas-gray-500': '#707070',
         'canvas-pink-300': '#B845E3',
         'canvas-sky-300': '#7DB7FF',
