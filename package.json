@@ -1,6 +1,6 @@
 {
   "name": "@bennybtl/xbit-lib",
-  "version": "1.0.17",
+  "version": "1.1.0",
   "description": "xbit library for xbit applets",
   "scripts": {
     "build": "rm -rf ./dist && mkdir ./dist && npx tailwindcss -i ./src/style.css -o ./dist/xbit.css && cp ./src/main.js ./dist/xbit.js",

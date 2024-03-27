@@ -145,6 +145,8 @@ const sendFilePickerCommand = async function () {
   }
 }
 
+// input a PDU type byte
+// output an object with the following properties:
 export const convertPduTypeToJSON = (pduType) => {
   return {
     connectable: (pduType & 1) > 0,
@@ -154,6 +156,32 @@ export const convertPduTypeToJSON = (pduType) => {
     legacy: (pduType & 16) > 0,
     extended: (pduType & 32) > 0
   }
+}
+
+// input a data buffer from a ranging packet
+// output an array of ranging records
+export const parseRangingData = (data) => {
+  const dataView = new DataView(data.buffer)
+  const rangingData = []
+  for (let i = 20; i < dataView.byteLength;) {
+    const record = {
+      type: dataView.getUint8(i),
+      len: dataView.getUint8(i + 1)
+    }
+    record.bytes = data.slice(i + 2, i + 2 + record.len)
+    if (record.type === 0) {
+      record.dist = (record.bytes[2] << 8) | record.bytes[3]
+      record.range = bytesToHex(record.bytes.slice(0, 2))
+    } else if (record.type === 10) {
+      record.color = [(record.bytes[0] * 10) % 255, (record.bytes[1] * 10) % 255, (record.bytes[2] * 10) % 255]
+    }
+    i += record.len
+    if (record.len <= 0) {
+      break
+    }    
+    rangingData.push(record)
+  }
+  return rangingData
 }
 
 export const rangingFlagsToJSON = (flags) => {
@@ -262,25 +290,7 @@ export function parseManufacturerData (adData) {
       t.shortAddr = t.longAddr.substring(12, 16)
       t.timestamp = dataView.getUint32(16, true)
 
-      t.rangingData = []
-      for (let i = 20; i < dataView.byteLength;) {
-        const record = {
-          type: dataView.getUint8(i),
-          len: dataView.getUint8(i + 1)
-        }
-        record.bytes = data.slice(i + 2, i + 2 + record.len)
-        if (record.type === 0) {
-          record.dist = (record.bytes[2] << 8) | record.bytes[3]
-          record.range = bytesToHex(record.bytes.slice(0, 2))
-        } else if (record.type === 10) {
-          record.color = [(record.bytes[0] * 10) % 255, (record.bytes[1] * 10) % 255, (record.bytes[2] * 10) % 255]
-        }
-        i += record.len
-        if (record.len <= 0) {
-          break
-        }    
-        t.rangingData.push(record)
-      }
+      t.rangingData = parseRangingData(data)
     }
     retval.push(t)
   })
@@ -330,6 +340,8 @@ export class xbit {
   static selected = {}
 
   static connected = {}
+
+  static connectingState = null
 
   static eventListeners = {}
 
@@ -390,7 +402,7 @@ export class xbit {
     this.eventListeners[type].splice(this.eventListeners[type].indexOf(callback), 1)
   }
 
-  static sendCommand = function (cmd) { // eslint-disable-line no-unused-vars
+  static sendCommand = function (cmd, timeout = 5000) { // eslint-disable-line no-unused-vars
     if (!cmd.id) {
       cmd.id = Math.round(Math.random() * 99) + 1
     }
@@ -399,13 +411,15 @@ export class xbit {
       const command = {
         data: cmd,
         reject,
-        resolve,
-        timeout: setTimeout(() => {
-          reject(new Error(`xbit-lib: sendCommand timeout ${cmd.method}:${cmd.id}`))
-          this.commands.splice(this.commands.indexOf(command), 1)
-        }, 5000)
+        resolve
       }
 
+      if (timeout) {
+        command.timeout = setTimeout(() => {
+          reject(new Error(`xbit-lib: sendCommand timeout ${cmd.method}:${cmd.id}`))
+          this.commands.splice(this.commands.indexOf(command), 1)
+        }, timeout)
+      }
       this.commands.push(command)
       if (vscode) {
         vscode.postMessage(cmd)
@@ -416,6 +430,78 @@ export class xbit {
       }
     })
   }
+
+  static bluetoothConnect = async function (params = {}) {
+    const command = {
+      method: 'bluetoothConnect',
+      params
+    }
+    await this.sendCommand(command)
+
+    if (this.connectingState) {
+      // TODO
+      // if device.address !== this.connectingState.deviceAddress
+      // reject
+      return this.connectingState.promise
+    }
+
+    // now in connecting state while waiting for the connection
+    this.connectingState = {
+      deviceAddress: params.deviceAddress
+    }
+
+    // create a promise to handle the bleConnect event
+    // that should be coming
+    this.connectingState.promise = new Promise((resolve, reject) => {
+      // timeout if no bleConnect event is received
+      this.connectingState.timeout = setTimeout(() => {
+        this.connectingState.reject(new Error('Connect Device Timeout'))
+      }, 7500)
+
+      this.connectingState.resolve = resolve
+      this.connectingState.reject = (error) => {
+        // wrap the reject so we can do some other things
+        // like clear the timeout
+        // and send a toast
+        clearTimeout(this.connectingState.timeout)
+        this.connectingState = null
+        reject(new Error('Connection failed'))
+      }
+    })
+
+    // store the promise so that if connectDevice is called during this
+    // this connection attemp, we can return it again
+    return this.connectingState.promise
+  }
+
+  static bluetoothDisconnect = async function () {
+    const command = {
+      method: 'bluetoothDisconnect',
+    }
+    await this.sendCommand(command)
+  
+    this.disconnectingState = {
+      deviceAddress: this.connected
+    }
+
+    this.disconnectingState.promise = new Promise((resolve, reject) => {
+      this.disconnectingState.timeout = setTimeout(() => {
+        this.connectingState.reject(new Error('Disconnect Device Timeout'))
+      }, 7500)  
+      this.disconnectingState.resolve = resolve
+      this.disconnectingState.reject = (error = null) => {
+        // wrap the reject so we can do some other things
+        // like clear the timeout
+        // and send a toast
+        clearTimeout(this.disconnectingState.timeout)
+        this.disconnectingState = null
+        reject(new Error('Disconnection failed'))
+      }
+    })
+    return this.disconnectingState.promise
+
+  }
+  
 
   static sendStartBluetoothScanningCommand = sendStartBluetoothScanningCommand
   static sendStopBluetoothScanningCommand = sendStopBluetoothScanningCommand
@@ -445,13 +531,40 @@ export class xbit {
     if (data.method === 'setSelected') {
       this.selected = data.params.device
     }
+
+    // serial connected
     if (data.method === 'connected') {
-      // if connected to the selected device
       this.connected[data.params.path] = data.params.device.connected
     }
+ 
+    // bluetooth connected
+    if (data.method === 'bluetoothConnected') {
+      if (this.connectingState?.deviceAddress === data.params.deviceAddress) {
+        this.connected = data.params.deviceAddress
+        clearTimeout(this.connectingState.timeout)
+        this.connectingState.resolve(this.connected)
+        this.connectingState = null
+      }
+    }
+
+    // serial disconnected
     if (data.method === 'disconnected') {
-      // if connected to the selected device
+      // connected will be null
       this.connected[data.params.path] = data.params.device.connected
+    }
+
+    // bluetooth disconnected
+    if (data.method === 'bluetoothDisconnected') {
+      if (this.disconnectingState?.deviceAddress === data.params.deviceAddress) {
+        clearTimeout(this.disconnectingState.timeout)
+        this.disconnectingState.resolve(this.connected)
+        this.disconnectingState = null
+        this.connected = null
+      } else if (this.connected === data.params.deviceAddress) {
+        this.connected = null
+      } else {
+        // ignore ?
+      }
     }
 
     if (typeof onMessage === 'function') {
