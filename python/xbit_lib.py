@@ -1,8 +1,11 @@
 import canvas_ble
+import canvas
 import binascii
+import time
 
 scanner = None
 connection = None
+timer = None
 gatt_client = None
 rpc_id = 0
 # store a scan rpc id separate so it can be included in scan results
@@ -24,24 +27,44 @@ scan_rpc_id = 0
 # Intended to be called by off-board host applications.
 # These functions form xbitLib's external-facing API.
 
+def scannerStopTimerCallback(arg):
+    global scanner
+    global timer
+    scanner.stop()
+
 # Start a BLE scan
-def scanStart(active):
+def scanStart(active, timeout = 0):
     global scanner
     global rpc_id
     global scan_rpc_id
+    global timer
     if scanner != None:
         scan_rpc_id = rpc_id
-        scanner.start(active)
+        try:
+            scanner.start(active)
+        except:
+            print("{'i':" + str(scan_rpc_id) + ",'e':'NOSCAN'}")
+            return
         print("{'i':" + str(scan_rpc_id) + "}")
+        if timeout != 0:
+            timer = canvas.Timer(timeout, False, scannerStopTimerCallback, None)
+            timer.start()
     else:
         print("{'i':" + str(scan_rpc_id) + ",'e':'NOSCAN'}")
 
 # Stop a BLE scan
 def scanStop():
     global scanner
+    global timer
     global rpc_id
     if scanner != None:
-        scanner.stop()
+        try:
+            scanner.stop()
+        except:
+            print("{'i':" + str(rpc_id) + ",'e':'NOSTOP'}")
+            return
+        if timer != None:
+            timer.stop()
         print("{'i':" + str(rpc_id) + "}")
     else:
         print("{'i':" + str(rpc_id) + ",'e':'NOSCAN'}")
@@ -51,7 +74,11 @@ def scanFilterReset():
     global scanner
     global rpc_id
     if scanner != None:
-        scanner.filter_reset()
+        try:
+            scanner.filter_reset()
+        except:
+            print("{'i':" + str(rpc_id) + ",'e':'NORESET'}")
+            return
         print("{'i':" + str(rpc_id) + "}")
     else:
         print("{'i':" + str(rpc_id) + ",'e':'NOSCAN'}")
@@ -61,7 +88,11 @@ def scanFilterAdd(filter_type_str, filter_value):
     global scanner
     global rpc_id
     if scanner != None:
-        scanner.filter_add(eval('canvas_ble.Scanner.' + filter_type_str), filter_value)
+        try:
+            scanner.filter_add(eval('canvas_ble.Scanner.' + filter_type_str), filter_value)
+        except:
+            print("{'i':" + str(rpc_id) + ",'e':'EXISTS'}")
+            return
         print("{'i':" + str(rpc_id) + "}")
     else:
         print("{'i':" + str(rpc_id) + ",'e':'NOSCAN'}")
@@ -74,7 +105,11 @@ def bleConnect(addr_str, phy_str):
         # report that we are already connected?
         print("{'i':" + str(rpc_id) + ",'e':'ALREADYCONNECTED'}")
         return
-    connection = canvas_ble.connect(binascii.unhexlify(addr_str), eval('canvas_ble.' + phy_str), con_cb, discon_cb)
+    try:
+        connection = canvas_ble.connect(binascii.unhexlify(addr_str), eval('canvas_ble.' + phy_str), con_cb, discon_cb)
+    except:
+        print("{'i':" + str(rpc_id) + ",'e':'NOCONN'}")
+        return
     if connection != None:
         print("{'i':" + str(rpc_id) + "}")
     else:
@@ -85,7 +120,11 @@ def bleDisconnect():
     global connection
     global rpc_id
     if connection != None:
-        connection.disconnect()
+        try:
+            connection.disconnect()
+        except:
+            print("{'i':" + str(rpc_id) + ",'e':'NODISC'}")
+            return
         print("{'i':" + str(rpc_id) + "}")
     else:
         print("{'i':" + str(rpc_id) + ",'e':'NOCONN'}")
@@ -95,7 +134,11 @@ def bleGetGattDictionary():
     global gatt_client
     global rpc_id
     if gatt_client != None:
-        gatt_dict = gatt_client.get_dict()
+        try:
+            gatt_dict = gatt_client.get_dict()
+        except:
+            print("{'i':" + str(rpc_id) + ", 'e':'NODICT'}")
+            return
         print("{'i':" + str(rpc_id) + ",'j':" + str(gatt_dict) + "}")
     else:
         print("{'i':" + str(rpc_id) + ",'e':'NOCLIENT'}")
@@ -119,7 +162,11 @@ def bleNotifyEnable(char_name):
     global gatt_client
     global rpc_id
     if gatt_client != None:
-        gatt_client.enable(char_name, canvas_ble.GattClient.CCCD_STATE_NOTIFY)
+        try:
+            gatt_client.enable(char_name, canvas_ble.GattClient.CCCD_STATE_NOTIFY)
+        except:
+            print("{'i':" + str(rpc_id) + ", 'e':'EXISTS'}")
+            return
         print("{'i':" + str(rpc_id) + "}")
     else:
         print("{'i':" + str(rpc_id) + ",'e':'NOCLIENT'}")
@@ -129,7 +176,11 @@ def bleNotifyDisable(char_name):
     global gatt_client
     global rpc_id
     if gatt_client != None:
-        gatt_client.enable(char_name, canvas_ble.GattClient.CCCD_STATE_DISABLE)
+        try:
+            gatt_client.enable(char_name, canvas_ble.GattClient.CCCD_STATE_DISABLE)
+        except:
+            print("{'i':" + str(rpc_id) + ", 'e':'NOEXIST'}")
+            return
         print("{'i':" + str(rpc_id) + "}")
     else:
         print("{'i':" + str(rpc_id) + ",'e':'NOCLIENT'}")
@@ -139,7 +190,11 @@ def bleWrite(char_name, data):
     global gatt_client
     global rpc_id
     if gatt_client != None:
-        gatt_client.write(char_name, bytes(data))
+        try:
+            gatt_client.write(char_name, bytes(data))
+        except:
+            print("{'i':" + str(rpc_id) + ", 'e':'WERROR'}")
+            return
         print("{'i':" + str(rpc_id) + "}")
     else:
         print("{'i':" + str(rpc_id) + ",'e':'NOCLIENT'}")
